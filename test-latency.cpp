@@ -1,4 +1,4 @@
-#include <websocketpp/config/core_client.hpp>
+#include <websocketpp/config/bare_client.hpp>
 #include <websocketpp/client.hpp>
 
 #include <websocketpp/common/connection_hdl.hpp> // connection_hdl
@@ -9,7 +9,28 @@
 #include <iostream>
 #include <string>
 
-typedef websocketpp::client<websocketpp::config::core_client> client;
+#include <websocketpp/logger/syslog.hpp>
+//#include <websocketpp/extensions/permessage_deflate/enabled.hpp>
+struct custom_client_config : public websocketpp::config::bare_client {
+    // Replace default stream logger with a syslog logger
+    typedef websocketpp::log::syslog<concurrency_type, websocketpp::log::elevel> elog_type;
+    typedef websocketpp::log::syslog<concurrency_type, websocketpp::log::alevel> alog_type;
+ 
+    // Reduce read buffer size to optimize for small messages
+    static const size_t connection_read_buffer_size = 1024;
+    static bool const enable_multithreading = false;
+ 
+ /*
+    // enable permessage_compress extension
+    struct permessage_deflate_config {};
+ 
+    typedef websocketpp::extensions::permessage_deflate::enabled
+        <permessage_deflate_config> permessage_deflate_type;
+        */
+};
+ 
+typedef websocketpp::client<custom_client_config> client;
+//typedef websocketpp::client<websocketpp::config::core_client> client;
 
 class connection_metadata
 {
