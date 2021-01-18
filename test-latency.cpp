@@ -44,7 +44,7 @@ public:
 
     void on_open(client *c, websocketpp::connection_hdl hdl)
     {
-        std::cout << "DDD connection_metadata::on_open" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): connection_metadata::on_open" << std::endl;
         m_status = "Open";
 
         client::connection_ptr con = c->get_con_from_hdl(hdl);
@@ -53,14 +53,14 @@ public:
 
     void on_fail(client *c, websocketpp::connection_hdl hdl)
     {
-        std::cout << "DDD connection_metadata::on_fail" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): connection_metadata::on_fail" << std::endl;
         m_status = "Failed";
 
         client::connection_ptr con = c->get_con_from_hdl(hdl);
         m_server = con->get_response_header("Server");
         m_error_reason = con->get_ec().message();
 
-        std::cout << "DDD    Error reason: " << m_error_reason << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"):    Error reason: " << m_error_reason << std::endl;
     }
 
     // TODO what does this do?
@@ -90,39 +90,39 @@ class websocket_endpoint
 public:
     void endpoint_on_open(websocketpp::connection_hdl hdl)
     {
-        std::cout << "DDD endpoint_on_open()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_open()" << std::endl;
         //m_connections.insert(hdl);
     }
 
     void endpoint_on_close(websocketpp::connection_hdl hdl)
     {
-        std::cout << "DDD endpoint_on_close()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_close()" << std::endl;
         //m_connections.erase(hdl);
     }
 
     void endpoint_on_fail(websocketpp::connection_hdl hdl)
     {
-        std::cout << "DDD endpoint_on_fail()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_fail()" << std::endl;
         //m_connections.erase(hdl);
     }
 
 
     void endpoint_on_init(websocketpp::connection_hdl hdl, client::message_ptr msg)
     {
-        std::cout << "DDD endpoint_on_init()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_init()" << std::endl;
     }
     void endpoint_on_message(websocketpp::connection_hdl hdl, client::message_ptr msg)
     {
-        std::cout << "DDD endpoint_on_message()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_message()" << std::endl;
     }
     bool endpoint_on_ping(websocketpp::connection_hdl hdl, std::string pingMsg)
     {
-        std::cout << "DDD endpoint_on_ping()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_ping()" << std::endl;
         return(true);
     }
     void endpoint_on_pong(websocketpp::connection_hdl hdl, std::string pongMsg)
     {
-        std::cout << "DDD endpoint_on_pong()" << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): endpoint_on_pong()" << std::endl;
     }
 
 
@@ -136,7 +136,7 @@ public:
         //m_client_endpoint.clear_error_channels(websocketpp::log::elevel::all);
         //m_thread.reset(new websocketpp::lib::thread(&client::run, &m_client_endpoint));
 
-        std::cout << "DDD set up handler for the end point." << std::endl;
+        std::cout << "DDD " << __FILE__ << "("<<__LINE__<<"): set up handler for the end point." << std::endl;
         m_client_endpoint.set_close_handler(websocketpp::lib::bind(&websocket_endpoint::endpoint_on_close, this, websocketpp::lib::placeholders::_1));
         m_client_endpoint.set_fail_handler(websocketpp::lib::bind(&websocket_endpoint::endpoint_on_fail, this, websocketpp::lib::placeholders::_1));
         //m_client_endpoint.set_http_handler(websocketpp::lib::bind(&websocket_endpoint::endpoint_on_http, this, websocketpp::lib::placeholders::_1));

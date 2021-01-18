@@ -41,73 +41,100 @@
 #include <string>
 #include <vector>
 
-namespace websocketpp {
-namespace transport {
-namespace bare {
-
-typedef lib::function<void(connection_hdl)> tcp_init_handler;
-
-/// Empty timer class to stub out for timer functionality that bare
-/// transport doesn't support
-/// TODO implement this
-struct timer {
-    void cancel() {}
-};
-
-template <typename config>
-class connection : public lib::enable_shared_from_this< connection<config> > {
-public:
-    /// Type of this connection transport component
-    typedef connection<config> type;
-    /// Type of a shared pointer to this connection transport component
-    typedef lib::shared_ptr<type> ptr;
-
-    /// transport concurrency policy
-    typedef typename config::concurrency_type concurrency_type;
-    /// Type of this transport's access logging policy
-    typedef typename config::alog_type alog_type;
-    /// Type of this transport's error logging policy
-    typedef typename config::elog_type elog_type;
-
-    // Concurrency policy types
-    typedef typename concurrency_type::scoped_lock_type scoped_lock_type;
-    typedef typename concurrency_type::mutex_type mutex_type;
-
-    typedef lib::shared_ptr<timer> timer_ptr;
-
-    explicit connection(bool is_server, const lib::shared_ptr<alog_type> & alog, const lib::shared_ptr<elog_type> & elog)
-      : m_alog(alog), m_elog(elog)
+namespace websocketpp
+{
+    namespace transport
     {
-        m_alog->write(log::alevel::devel,"bare con transport constructor");
-    }
+        namespace bare
+        {
 
-    /// Get a shared pointer to this component
-    ptr get_shared() {
-        return type::shared_from_this();
-    }
+            typedef lib::function<void(connection_hdl)> tcp_init_handler;
 
-    /// Set whether or not this connection is secure
-    /**
+            /// Empty timer class to stub out for timer functionality that bare
+            /// transport doesn't support
+            /// TODO implement this
+            struct timer
+            {
+                void cancel() {}
+            };
+
+            template <typename config>
+            class connection : public lib::enable_shared_from_this<connection<config>>
+            {
+            public:
+                /// Type of this connection transport component
+                typedef connection<config> type;
+                /// Type of a shared pointer to this connection transport component
+                typedef lib::shared_ptr<type> ptr;
+
+                /// transport concurrency policy
+                typedef typename config::concurrency_type concurrency_type;
+                /// Type of this transport's access logging policy
+                typedef typename config::alog_type alog_type;
+                /// Type of this transport's error logging policy
+                typedef typename config::elog_type elog_type;
+
+                // Concurrency policy types
+                typedef typename concurrency_type::scoped_lock_type scoped_lock_type;
+                typedef typename concurrency_type::mutex_type mutex_type;
+
+                typedef lib::shared_ptr<timer> timer_ptr;
+
+                explicit connection(bool is_server, const lib::shared_ptr<alog_type> &alog, const lib::shared_ptr<elog_type> &elog)
+                    : m_alog(alog), m_elog(elog)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): connection()" << std::endl;
+                    if (is_server)
+                    {
+                        std::cout << "DDD    TODO " << __FILE__ << "(" << __LINE__ << "): connection() for a server" << std::endl;
+                    }
+                    else
+                    {
+                        std::cout << "DDD    TODO " << __FILE__ << "(" << __LINE__ << "): connection() for a client" << std::endl;
+                    }
+                    m_alog->write(log::alevel::devel, "bare con transport constructor");
+                }
+
+                std::string get_proxy()
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): get_shared()" << std::endl;
+                    return ("");
+                }
+
+                /// Get a shared pointer to this component
+                ptr get_shared()
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): get_shared()" << std::endl;
+                    return type::shared_from_this();
+                }
+
+                /// Set whether or not this connection is secure
+                /**
      * Todo: docs
      *
      * @since 0.3.0-alpha4
      *
      * @param value Whether or not this connection is secure.
      */
-    void set_secure(bool value) {}
+                void set_secure(bool value)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): set_secure()" << std::endl;
+                }
 
-    /// Tests whether or not the underlying transport is secure
-    /**
+                /// Tests whether or not the underlying transport is secure
+                /**
      * TODO: docs
      *
      * @return Whether or not the underlying transport is secure
      */
-    bool is_secure() const {
-        return false;
-    }
+                bool is_secure() const
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): is_secure()" << std::endl;
+                    return false;
+                }
 
-    /// Set uri hook
-    /**
+                /// Set uri hook
+                /**
      * Called by the endpoint as a connection is being established to provide
      * the uri being connected to to the transport layer.
      *
@@ -118,10 +145,17 @@ public:
      *
      * @param u The uri to set
      */
-    void set_uri(uri_ptr) {}
+                void set_uri(uri_ptr uriPointer)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): set_uri()" << std::endl;
+                    m_uniformResourceIdentifierPointer = uriPointer;
+                    std::string host = m_uniformResourceIdentifierPointer->get_host();
+                    std::string port = m_uniformResourceIdentifierPointer->get_port_str();
+                    std::cout << "DDD Host: " << host << " Port: " << port << std::endl;
+                }
 
-    /// Set human readable remote endpoint address
-    /**
+                /// Set human readable remote endpoint address
+                /**
      * Sets the remote endpoint address returned by `get_remote_endpoint`. This
      * value should be a human readable string that describes the remote
      * endpoint. Typically an IP address or hostname, perhaps with a port. But
@@ -134,10 +168,13 @@ public:
      *
      * @param value The remote endpoint address to set.
      */
-    void set_remote_endpoint(std::string value) {}
+                void set_remote_endpoint(std::string value)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): set_remote_endpoint()" << std::endl;
+                }
 
-    /// Get human readable remote endpoint address
-    /**
+                /// Get human readable remote endpoint address
+                /**
      * TODO: docs
      *
      * This value is used in access and error logs and is available to the end
@@ -145,20 +182,24 @@ public:
      *
      * @return A string identifying the address of the remote endpoint
      */
-    std::string get_remote_endpoint() const {
-        return "unknown (bare transport)";
-    }
+                std::string get_remote_endpoint() const
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): get_remote_endpoint()" << std::endl;
+                    return "unknown (bare transport)";
+                }
 
-    /// Get the connection handle
-    /**
+                /// Get the connection handle
+                /**
      * @return The handle for this connection.
      */
-    connection_hdl get_handle() const {
-        return connection_hdl();
-    }
+                connection_hdl get_handle() const
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): get_handle()" << std::endl;
+                    return connection_hdl();
+                }
 
-    /// Call back a function after a period of time.
-    /**
+                /// Call back a function after a period of time.
+                /**
      * Timers are not implemented in this transport. The timer pointer will
      * always be empty. The handler will never be called.
      *
@@ -167,23 +208,39 @@ public:
      * @return A handle that can be used to cancel the timer if it is no longer
      * needed.
      */
-    timer_ptr set_timer(long duration, timer_handler handler) {
-        return timer_ptr();
-    }
-protected:
-    /// Initialize the connection transport
-    /**
+                timer_ptr set_timer(long duration, timer_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): set_timer()" << std::endl;
+                    return timer_ptr();
+                }
+
+            protected:
+                /// Initialize the connection transport
+                /**
      * Initialize the connection's transport component.
      *
      * @param handler The `init_handler` to call when initialization is done
+     * 
+     * **init**\n
+   * `void init(init_handler handler)`\n
+   * Called once shortly after construction to give the policy the chance to
+   * perform one time initialization. When complete, the policy must call the
+   * supplied `init_handler` to continue setup. The handler takes one argument
+   * with the error code if any. If an error is returned here setup will fail and
+   * the connection will be aborted or terminated.
+   *
+  * WebSocket++ will call init only once. The transport must call `handler`
+   * exactly once.
      */
-    void init(init_handler handler) {
-        m_alog->write(log::alevel::devel,"bare connection init");
-        handler(make_error_code(error::not_implemented));
-    }
+                void init(init_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): init()" << std::endl;
+                    m_alog->write(log::alevel::devel, "bare connection init");
+                    handler(make_error_code(error::not_implemented));
+                }
 
-    /// Initiate an async_read for at least num_bytes bytes into buf
-    /**
+                /// Initiate an async_read for at least num_bytes bytes into buf
+                /**
      * Initiates an async_read request for at least num_bytes bytes. The input
      * will be read into buf. A maximum of len bytes will be input. When the
      * operation is complete, handler will be called with the status and number
@@ -206,15 +263,16 @@ protected:
      * @param handler The callback to invoke when the operation is complete or
      * ends in an error
      */
-    void async_read_at_least(size_t num_bytes, char * buf, size_t len,
-        read_handler handler)
-    {
-        m_alog->write(log::alevel::devel, "bare_con async_read_at_least");
-        handler(make_error_code(error::not_implemented), 0);
-    }
+                void async_read_at_least(size_t num_bytes, char *buf, size_t len,
+                                         read_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): async_read_at_least()" << std::endl;
+                    m_alog->write(log::alevel::devel, "bare_con async_read_at_least");
+                    handler(make_error_code(error::not_implemented), 0);
+                }
 
-    /// Asyncronous Transport Write
-    /**
+                /// Asyncronous Transport Write
+                /**
      * Write len bytes in buf to the output stream. Call handler to report
      * success or failure. handler may or may not be called during async_write,
      * but it must be safe for this to happen.
@@ -225,13 +283,15 @@ protected:
      * @param len number of bytes to write
      * @param handler Callback to invoke with operation status.
      */
-    void async_write(char const * buf, size_t len, write_handler handler) {
-        m_alog->write(log::alevel::devel,"bare_con async_write");
-        handler(make_error_code(error::not_implemented));
-    }
+                void async_write(char const *buf, size_t len, write_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): async_write()" << std::endl;
+                    m_alog->write(log::alevel::devel, "bare_con async_write");
+                    handler(make_error_code(error::not_implemented));
+                }
 
-    /// Asyncronous Transport Write (scatter-gather)
-    /**
+                /// Asyncronous Transport Write (scatter-gather)
+                /**
      * Write a sequence of buffers to the output stream. Call handler to report
      * success or failure. handler may or may not be called during async_write,
      * but it must be safe for this to happen.
@@ -241,19 +301,27 @@ protected:
      * @param bufs vector of buffers to write
      * @param handler Callback to invoke with operation status.
      */
-    void async_write(std::vector<buffer> const & bufs, write_handler handler) {
-        m_alog->write(log::alevel::devel,"bare_con async_write buffer list");
-        handler(make_error_code(error::not_implemented));
-    }
+                void async_write(std::vector<buffer> const &bufs, write_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): async_write()" << std::endl;
+                    m_alog->write(log::alevel::devel, "bare_con async_write buffer list");
+                    handler(make_error_code(error::not_implemented));
+                }
 
-    /// Set Connection Handle
-    /**
+                /// Set Connection Handle
+                /**
      * @param hdl The new handle
+     * 
+     * TODO who uses the m_hdl?
      */
-    void set_handle(connection_hdl hdl) {}
+                void set_handle(connection_hdl hdl)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): set_handle() From where is this called and what is the purpose?" << std::endl;
+                    m_hdl = hdl;
+                }
 
-    /// Call given handler back within the transport's event system (if present)
-    /**
+                /// Call given handler back within the transport's event system (if present)
+                /**
      * Invoke a callback within the transport's event system if it has one. If
      * it doesn't, the handler will be invoked immediately before this function
      * returns.
@@ -263,27 +331,34 @@ protected:
      * @return Whether or not the transport was able to register the handler for
      * callback.
      */
-    lib::error_code dispatch(dispatch_handler handler) {
-        handler();
-        return lib::error_code();
-    }
+                lib::error_code dispatch(dispatch_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): dispatch()" << std::endl;
+                    handler();
+                    return lib::error_code();
+                }
 
-    /// Perform cleanup on socket shutdown_handler
-    /**
+                /// Perform cleanup on socket shutdown_handler
+                /**
      * @param h The `shutdown_handler` to call back when complete
      */
-    void async_shutdown(shutdown_handler handler) {
-        handler(lib::error_code());
-    }
-private:
-    // member variables!
-    lib::shared_ptr<alog_type> m_alog;
-    lib::shared_ptr<elog_type> m_elog;
-};
+                void async_shutdown(shutdown_handler handler)
+                {
+                    std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): async_shutdown()" << std::endl;
+                    handler(lib::error_code());
+                }
 
+            private:
+                // member variables!
+                lib::shared_ptr<alog_type> m_alog;
+                lib::shared_ptr<elog_type> m_elog;
 
-} // namespace bare
-} // namespace transport
+                uri_ptr m_uniformResourceIdentifierPointer;
+                connection_hdl m_hdl;
+            };
+
+        } // namespace bare
+    }     // namespace transport
 } // namespace websocketpp
 
 #endif // WEBSOCKETPP_TRANSPORT_bare_CON_HPP

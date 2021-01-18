@@ -15,128 +15,122 @@
 #include <sstream>
 #include <string>
 
-#include <cerrno>         // errno
+#include <cerrno> // errno
 
-namespace websocketpp {
-namespace transport {
-namespace bare {
+namespace websocketpp
+{
+    namespace transport
+    {
+        namespace bare
+        {
 
-/// Bare based endpoint transport component
-/**
+            /// Bare based endpoint transport component
+            /**
  * transport::bare::endpoint implements an endpoint transport component using
  * Bare.
  */
-template <typename config>
-//class endpoint : public config::socket_type {
-class endpoint {
-public:
-    /// Type of this endpoint transport component
-    typedef endpoint<config> type;
+            template <typename config>
+            //class endpoint : public config::socket_type {
+            class endpoint
+            {
+            public:
+                /// Type of this endpoint transport component
+                typedef endpoint<config> type;
 
-    /// Type of the concurrency policy
-    typedef typename config::concurrency_type concurrency_type;
-    /// Type of the socket policy
-    typedef typename config::socket_type socket_type;
-    /// Type of the error logging policy
-    typedef typename config::elog_type elog_type;
-    /// Type of the access logging policy
-    typedef typename config::alog_type alog_type;
+                /// Type of the concurrency policy
+                typedef typename config::concurrency_type concurrency_type;
+                /// Type of the socket policy
+                typedef typename config::socket_type socket_type;
+                /// Type of the error logging policy
+                typedef typename config::elog_type elog_type;
+                /// Type of the access logging policy
+                typedef typename config::alog_type alog_type;
 
-    /// Type of the socket connection component
-    //typedef typename socket_type::socket_con_type socket_con_type;
-    /// Type of a shared pointer to the socket connection component
-    //typedef typename socket_con_type::ptr socket_con_ptr;
+                /// Type of the socket connection component
+                //typedef typename socket_type::socket_con_type socket_con_type;
+                /// Type of a shared pointer to the socket connection component
+                //typedef typename socket_con_type::ptr socket_con_ptr;
 
-    /// Type of the connection transport component associated with this
-    /// endpoint transport component
-    typedef bare::connection<config> transport_con_type;
-    /// Type of a shared pointer to the connection transport component
-    /// associated with this endpoint transport component
-    typedef typename transport_con_type::ptr transport_con_ptr;
+                /// Type of the connection transport component associated with this
+                /// endpoint transport component
+                typedef bare::connection<config> transport_con_type;
+                /// Type of a shared pointer to the connection transport component
+                /// associated with this endpoint transport component
+                typedef typename transport_con_type::ptr transport_con_ptr;
 
-    /// Type of a pointer to the bare io_service being used
-    typedef lib::bare::io_service * io_service_ptr;
-    /// Type of a shared pointer to the acceptor being used
-    typedef lib::shared_ptr<lib::bare::ip::tcp::acceptor> acceptor_ptr;
-    /// Type of a shared pointer to the resolver being used
-    typedef lib::shared_ptr<lib::bare::ip::tcp::resolver> resolver_ptr;
-    /// Type of timer handle
-    typedef lib::shared_ptr<lib::bare::steady_timer> timer_ptr;
-    /// Type of a shared pointer to an io_service work object
-    typedef lib::shared_ptr<lib::bare::io_service::work> work_ptr;
+                /// Type of a pointer to the bare io_service being used
+                typedef lib::bare::io_service *io_service_ptr;
+                /// Type of a shared pointer to the acceptor being used
+                typedef lib::shared_ptr<lib::bare::ip::tcp::acceptor> acceptor_ptr;
+                /// Type of a shared pointer to the resolver being used
+                typedef lib::shared_ptr<lib::bare::ip::tcp::resolver> resolver_ptr;
+                /// Type of timer handle
+                typedef lib::shared_ptr<lib::bare::steady_timer> timer_ptr;
+                /// Type of a shared pointer to an io_service work object
+                typedef lib::shared_ptr<lib::bare::io_service::work> work_ptr;
 
-    /// Type of socket pre-bind handler
-    typedef lib::function<lib::error_code(acceptor_ptr)> tcp_pre_bind_handler;
+                /// Type of socket pre-bind handler
+                typedef lib::function<lib::error_code(acceptor_ptr)> tcp_pre_bind_handler;
 
-    // generate and manage our own io_service
+                // generate and manage our own io_service
 
-    // TODO  , m_listen_backlog(lib::bare::socket_base::max_connections)
+                // TODO  , m_listen_backlog(lib::bare::socket_base::max_connections)
 
-    explicit endpoint()
-      : m_io_service(NULL)
-      , m_external_io_service(false)
-      , m_listen_backlog(1)
-      , m_reuse_addr(false)
-      , m_state(UNINITIALIZED)
-    {
-        //std::cout << "transport::bare::endpoint constructor" << std::endl;
-    }
+                explicit endpoint()
+                    : m_io_service(NULL), m_external_io_service(false), m_listen_backlog(1), m_reuse_addr(false), m_state(UNINITIALIZED)
+                {
+                    //std::cout << "transport::bare::endpoint constructor" << std::endl;
+                }
 
-    ~endpoint() {
-        // clean up our io_service if we were initialized with an internal one.
+                ~endpoint()
+                {
+                    // clean up our io_service if we were initialized with an internal one.
 
-        // Explicitly destroy local objects
-        m_acceptor.reset();
-        m_resolver.reset();
-        m_work.reset();
-        if (m_state != UNINITIALIZED && !m_external_io_service) {
-            delete m_io_service;
-        }
-    }
+                    // Explicitly destroy local objects
+                    m_acceptor.reset();
+                    m_resolver.reset();
+                    m_work.reset();
+                    if (m_state != UNINITIALIZED && !m_external_io_service)
+                    {
+                        delete m_io_service;
+                    }
+                }
 
-    /// transport::bare objects are moveable but not copyable or assignable.
-    /// The following code sets this situation up based on whether or not we
-    /// have C++11 support or not
+                /// transport::bare objects are moveable but not copyable or assignable.
+                /// The following code sets this situation up based on whether or not we
+                /// have C++11 support or not
 #ifdef _WEBSOCKETPP_DEFAULT_DELETE_FUNCTIONS_
-    endpoint(const endpoint & src) = delete;
-    endpoint& operator= (const endpoint & rhs) = delete;
+                endpoint(const endpoint &src) = delete;
+                endpoint &operator=(const endpoint &rhs) = delete;
 #else
-private:
-    endpoint(const endpoint & src);
-    endpoint & operator= (const endpoint & rhs);
-public:
+            private:
+                endpoint(const endpoint &src);
+                endpoint &operator=(const endpoint &rhs);
+
+            public:
 #endif // _WEBSOCKETPP_DEFAULT_DELETE_FUNCTIONS_
 
 #ifdef _WEBSOCKETPP_MOVE_SEMANTICS_
-    endpoint (endpoint && src)
-      : config::socket_type(std::move(src))
-      , m_tcp_pre_init_handler(src.m_tcp_pre_init_handler)
-      , m_tcp_post_init_handler(src.m_tcp_post_init_handler)
-      , m_io_service(src.m_io_service)
-      , m_external_io_service(src.m_external_io_service)
-      , m_acceptor(src.m_acceptor)
-      , m_listen_backlog(lib::bare::socket_base::max_connections)
-      , m_reuse_addr(src.m_reuse_addr)
-      , m_elog(src.m_elog)
-      , m_alog(src.m_alog)
-      , m_state(src.m_state)
-    {
-        src.m_io_service = NULL;
-        src.m_external_io_service = false;
-        src.m_acceptor = NULL;
-        src.m_state = UNINITIALIZED;
-    }
+                endpoint(endpoint &&src)
+                    : config::socket_type(std::move(src)), m_tcp_pre_init_handler(src.m_tcp_pre_init_handler), m_tcp_post_init_handler(src.m_tcp_post_init_handler), m_io_service(src.m_io_service), m_external_io_service(src.m_external_io_service), m_acceptor(src.m_acceptor), m_listen_backlog(lib::bare::socket_base::max_connections), m_reuse_addr(src.m_reuse_addr), m_elog(src.m_elog), m_alog(src.m_alog), m_state(src.m_state)
+                {
+                    src.m_io_service = NULL;
+                    src.m_external_io_service = false;
+                    src.m_acceptor = NULL;
+                    src.m_state = UNINITIALIZED;
+                }
 #endif // _WEBSOCKETPP_MOVE_SEMANTICS_
 
-    /// Return whether or not the endpoint produces secure connections.
-    bool is_secure() const {
-        // return socket_type::is_secure();
-        std::cout << "DDD is_secure()" << std::endl;
-        return(false);
-    }
+                /// Return whether or not the endpoint produces secure connections.
+                bool is_secure() const
+                {
+                    // return socket_type::is_secure();
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): is_secure()" << std::endl;
+                    return (false);
+                }
 
-    /// initialize bare transport with external io_service (exception free)
-    /**
+                /// initialize bare transport with external io_service (exception free)
+                /**
      * Initialize the bare transport policy for this endpoint using the provided
      * io_service object. bare_init must be called exactly once on any endpoint
      * that uses transport::bare before it can be used.
@@ -144,9 +138,10 @@ public:
      * @param ptr A pointer to the io_service to use for bare events
      * @param ec Set to indicate what error occurred, if any.
      */
-    void init_bare(io_service_ptr ptr, lib::error_code & ec) {
-        std::cout << "DDD init_bare(io_service_ptr ptr, lib::error_code & ec)" << std::endl;
-        /*
+                void init_bare(io_service_ptr ptr, lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init_bare(io_service_ptr ptr, lib::error_code & ec)" << std::endl;
+                    /*
         if (m_state != UNINITIALIZED) {
             m_elog->write(log::elevel::library,
                 "bare::init_bare called from the wrong state");
@@ -164,27 +159,28 @@ public:
         m_state = READY;
         ec = lib::error_code();
         */
-    }
+                }
 
-    /// initialize bare transport with external io_service
-    /**
+                /// initialize bare transport with external io_service
+                /**
      * Initialize the bare transport policy for this endpoint using the provided
      * io_service object. bare_init must be called exactly once on any endpoint
      * that uses transport::bare before it can be used.
      *
      * @param ptr A pointer to the io_service to use for bare events
      */
-    void init_bare(io_service_ptr ptr) {
-        std::cout << "DDD init_bare(io_service_ptr ptr)" << std::endl;
-        /*
+                void init_bare(io_service_ptr ptr)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init_bare(io_service_ptr ptr)" << std::endl;
+                    /*
         lib::error_code ec;
         init_bare(ptr,ec);
         if (ec) { throw exception(ec); }
         */
-    }
+                }
 
-    /// Initialize bare transport with internal io_service (exception free)
-    /**
+                /// Initialize bare transport with internal io_service (exception free)
+                /**
      * This method of initialization will allocate and use an internally managed
      * io_service.
      *
@@ -192,13 +188,14 @@ public:
      *
      * @param ec Set to indicate what error occurred, if any.
      */
-    void init_bare(lib::error_code & ec) {
-        std::cout << "DDD init_bare(lib::error_code & ec)" << std::endl;
-        // Use a smart pointer until the call is successful and ownership has 
-        // successfully been taken. Use unique_ptr when available.
-        // TODO: remove the use of auto_ptr when C++98/03 support is no longer
-        //       necessary.
-        /*
+                void init_bare(lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init_bare(lib::error_code & ec)" << std::endl;
+                    // Use a smart pointer until the call is successful and ownership has
+                    // successfully been taken. Use unique_ptr when available.
+                    // TODO: remove the use of auto_ptr when C++98/03 support is no longer
+                    //       necessary.
+                    /*
 #ifdef _WEBSOCKETPP_CPP11_MEMORY_
         lib::unique_ptr<lib::bare::io_service> service(new lib::bare::io_service());
 #else
@@ -208,22 +205,23 @@ public:
         if( !ec ) service.release(); // Call was successful, transfer ownership
         m_external_io_service = false;
         */
-    }
+                }
 
-    /// Initialize bare transport with internal io_service
-    /**
+                /// Initialize bare transport with internal io_service
+                /**
      * This method of initialization will allocate and use an internally managed
      * io_service.
      *
      * @see init_bare(io_service_ptr ptr)
      */
-    void init_bare() {
-        std::cout << "DDD init_bare()" << std::endl;
-        // Use a smart pointer until the call is successful and ownership has 
-        // successfully been taken. Use unique_ptr when available.
-        // TODO: remove the use of auto_ptr when C++98/03 support is no longer
-        //       necessary.
-        /*
+                void init_bare()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init_bare()" << std::endl;
+                    // Use a smart pointer until the call is successful and ownership has
+                    // successfully been taken. Use unique_ptr when available.
+                    // TODO: remove the use of auto_ptr when C++98/03 support is no longer
+                    //       necessary.
+                    /*
 #ifdef _WEBSOCKETPP_CPP11_MEMORY_
         lib::unique_ptr<lib::bare::io_service> service(new lib::bare::io_service());
 #else
@@ -234,10 +232,10 @@ public:
         service.release();
         m_external_io_service = false;
         */
-    }
+                }
 
-    /// Sets the tcp pre bind handler
-    /**
+                /// Sets the tcp pre bind handler
+                /**
      * The tcp pre bind handler is called after the listen acceptor has
      * been created but before the socket bind is performed.
      *
@@ -245,13 +243,14 @@ public:
      *
      * @param h The handler to call on tcp pre bind init.
      */
-    void set_tcp_pre_bind_handler(tcp_pre_bind_handler h) {
-        std::cout << "DDD set_tcp_pre_bind_handler(tcp_pre_bind_handler h)" << std::endl;
-        // m_tcp_pre_bind_handler = h;
-    }
+                void set_tcp_pre_bind_handler(tcp_pre_bind_handler h)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_tcp_pre_bind_handler(tcp_pre_bind_handler h)" << std::endl;
+                    // m_tcp_pre_bind_handler = h;
+                }
 
-    /// Sets the tcp pre init handler
-    /**
+                /// Sets the tcp pre init handler
+                /**
      * The tcp pre init handler is called after the raw tcp connection has been
      * established but before any additional wrappers (proxy connects, TLS
      * handshakes, etc) have been performed.
@@ -260,13 +259,14 @@ public:
      *
      * @param h The handler to call on tcp pre init.
      */
-    void set_tcp_pre_init_handler(tcp_init_handler h) {
-        std::cout << "DDD set_tcp_pre_init_handler(tcp_init_handler h)" << std::endl;
-        //m_tcp_pre_init_handler = h;
-    }
+                void set_tcp_pre_init_handler(tcp_init_handler h)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_tcp_pre_init_handler(tcp_init_handler h)" << std::endl;
+                    //m_tcp_pre_init_handler = h;
+                }
 
-    /// Sets the tcp pre init handler (deprecated)
-    /**
+                /// Sets the tcp pre init handler (deprecated)
+                /**
      * The tcp pre init handler is called after the raw tcp connection has been
      * established but before any additional wrappers (proxy connects, TLS
      * handshakes, etc) have been performed.
@@ -275,13 +275,14 @@ public:
      *
      * @param h The handler to call on tcp pre init.
      */
-    void set_tcp_init_handler(tcp_init_handler h) {
-        std::cout << "DDD set_tcp_init_handler(tcp_init_handler h)" << std::endl;
-        //set_tcp_pre_init_handler(h);
-    }
+                void set_tcp_init_handler(tcp_init_handler h)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_tcp_init_handler(tcp_init_handler h)" << std::endl;
+                    //set_tcp_pre_init_handler(h);
+                }
 
-    /// Sets the tcp post init handler
-    /**
+                /// Sets the tcp post init handler
+                /**
      * The tcp post init handler is called after the tcp connection has been
      * established and all additional wrappers (proxy connects, TLS handshakes,
      * etc have been performed. This is fired before any bytes are read or any
@@ -291,13 +292,14 @@ public:
      *
      * @param h The handler to call on tcp post init.
      */
-    void set_tcp_post_init_handler(tcp_init_handler h) {
-        std::cout << "DDD set_tcp_post_init_handler(tcp_init_handler h)" << std::endl;
-        //m_tcp_post_init_handler = h;
-    }
+                void set_tcp_post_init_handler(tcp_init_handler h)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_tcp_post_init_handler(tcp_init_handler h)" << std::endl;
+                    //m_tcp_post_init_handler = h;
+                }
 
-    /// Sets the maximum length of the queue of pending connections.
-    /**
+                /// Sets the maximum length of the queue of pending connections.
+                /**
      * Sets the maximum length of the queue of pending connections. Increasing
      * this will allow WebSocket++ to queue additional incoming connections.
      * Setting it higher may prevent failed connections at high connection rates
@@ -317,13 +319,14 @@ public:
      *
      * @param backlog The maximum length of the queue of pending connections
      */
-    void set_listen_backlog(int backlog) {
-        std::cout << "DDD set_listen_backlog(int backlog)" << std::endl;
-        //m_listen_backlog = backlog;
-    }
+                void set_listen_backlog(int backlog)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_listen_backlog(int backlog)" << std::endl;
+                    //m_listen_backlog = backlog;
+                }
 
-    /// Sets whether to use the SO_REUSEADDR flag when opening listening sockets
-    /**
+                /// Sets whether to use the SO_REUSEADDR flag when opening listening sockets
+                /**
      * Specifies whether or not to use the SO_REUSEADDR TCP socket option. What
      * this flag does depends on your operating system.
      *
@@ -339,13 +342,14 @@ public:
      *
      * @param value Whether or not to use the SO_REUSEADDR option
      */
-    void set_reuse_addr(bool value) {
-        std::cout << "DDD set_reuse_addr(bool value)" << std::endl;
-        //m_reuse_addr = value;
-    }
+                void set_reuse_addr(bool value)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_reuse_addr(bool value)" << std::endl;
+                    //m_reuse_addr = value;
+                }
 
-    /// Retrieve a reference to the endpoint's io_service
-    /**
+                /// Retrieve a reference to the endpoint's io_service
+                /**
      * The io_service may be an internal or external one. This may be used to
      * call methods of the io_service that are not explicitly wrapped by the
      * endpoint.
@@ -355,13 +359,14 @@ public:
      *
      * @return A reference to the endpoint's io_service
      */
-    lib::bare::io_service & get_io_service() {
-        std::cout << "DDD get_io_service()" << std::endl;
-        return *m_io_service;
-    }
-    
-    /// Get local TCP endpoint
-    /**
+                lib::bare::io_service &get_io_service()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): get_io_service()" << std::endl;
+                    return *m_io_service;
+                }
+
+                /// Get local TCP endpoint
+                /**
      * Extracts the local endpoint from the acceptor. This represents the
      * address that WebSocket++ is listening on.
      *
@@ -373,9 +378,10 @@ public:
      * @param ec Set to indicate what error occurred, if any.
      * @return The local endpoint
      */
-    lib::bare::ip::tcp::endpoint get_local_endpoint(lib::bare::error_code & ec) {
-        std::cout << "DDD get_local_endpoint(lib::bare::error_code & ec)" << std::endl;
-        /*
+                lib::bare::ip::tcp::endpoint get_local_endpoint(lib::bare::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): get_local_endpoint(lib::bare::error_code & ec)" << std::endl;
+                    /*
         if (m_acceptor) {
             return m_acceptor->local_endpoint(ec);
         } else {
@@ -383,21 +389,21 @@ public:
             return lib::bare::ip::tcp::endpoint();
         }
         */
-       return(0);
-    }
+                    return (0);
+                }
 
-    /// Set up endpoint for listening manually (exception free)
-    /**
+                /// Set up endpoint for listening manually (exception free)
+                /**
      * Bind the internal acceptor using the specified settings. The endpoint
      * must have been initialized by calling init_bare before listening.
      *
      * @param ep An endpoint to read settings from
      * @param ec Set to indicate what error occurred, if any.
      */
-    void listen(lib::bare::ip::tcp::endpoint const & ep, lib::error_code & ec)
-    {
-        std::cout << "DDD listen(lib::bare::ip::tcp::endpoint const & ep, lib::error_code & ec)" << std::endl;
-        /*
+                void listen(lib::bare::ip::tcp::endpoint const &ep, lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(lib::bare::ip::tcp::endpoint const & ep, lib::error_code & ec)" << std::endl;
+                    /*
         if (m_state != READY) {
             m_elog->write(log::elevel::library,
                 "bare::listen called from the wrong state");
@@ -435,27 +441,26 @@ public:
         m_state = LISTENING;
         ec = lib::error_code();
         */
-    }
+                }
 
-
-
-    /// Set up endpoint for listening manually
-    /**
+                /// Set up endpoint for listening manually
+                /**
      * Bind the internal acceptor using the settings specified by the endpoint e
      *
      * @param ep An endpoint to read settings from
      */
-    void listen(lib::bare::ip::tcp::endpoint const & ep) {
-        std::cout << "DDD listen(lib::bare::ip::tcp::endpoint const & ep)" << std::endl;
-        /*
+                void listen(lib::bare::ip::tcp::endpoint const &ep)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(lib::bare::ip::tcp::endpoint const & ep)" << std::endl;
+                    /*
         lib::error_code ec;
         listen(ep,ec);
         if (ec) { throw exception(ec); }
         */
-    }
+                }
 
-    /// Set up endpoint for listening with protocol and port (exception free)
-    /**
+                /// Set up endpoint for listening with protocol and port (exception free)
+                /**
      * Bind the internal acceptor using the given internet protocol and port.
      * The endpoint must have been initialized by calling init_bare before
      * listening.
@@ -468,19 +473,19 @@ public:
      * @param port The port to listen on.
      * @param ec Set to indicate what error occurred, if any.
      */
-    template <typename InternetProtocol>
-    void listen(InternetProtocol const & internet_protocol, uint16_t port,
-        lib::error_code & ec)
-    {
-        std::cout << "DDD listen(InternetProtocol const & internet_protocol, uint16_t port,lib::error_code & ec)" << std::endl;
-        /*
+                template <typename InternetProtocol>
+                void listen(InternetProtocol const &internet_protocol, uint16_t port,
+                            lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(InternetProtocol const & internet_protocol, uint16_t port,lib::error_code & ec)" << std::endl;
+                    /*
         lib::bare::ip::tcp::endpoint ep(internet_protocol, port);
         listen(ep,ec);
         */
-    }
+                }
 
-    /// Set up endpoint for listening with protocol and port
-    /**
+                /// Set up endpoint for listening with protocol and port
+                /**
      * Bind the internal acceptor using the given internet protocol and port.
      * The endpoint must have been initialized by calling init_bare before
      * listening.
@@ -492,18 +497,18 @@ public:
      * @param internet_protocol The internet protocol to use.
      * @param port The port to listen on.
      */
-    template <typename InternetProtocol>
-    void listen(InternetProtocol const & internet_protocol, uint16_t port)
-    {
-        std::cout << "DDD listen(InternetProtocol const & internet_protocol, uint16_t port)" << std::endl;
-        /*
+                template <typename InternetProtocol>
+                void listen(InternetProtocol const &internet_protocol, uint16_t port)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(InternetProtocol const & internet_protocol, uint16_t port)" << std::endl;
+                    /*
         lib::bare::ip::tcp::endpoint ep(internet_protocol, port);
         listen(ep);
         */
-    }
+                }
 
-    /// Set up endpoint for listening on a port (exception free)
-    /**
+                /// Set up endpoint for listening on a port (exception free)
+                /**
      * Bind the internal acceptor using the given port. The IPv6 protocol with
      * mapped IPv4 for dual stack hosts will be used. If you need IPv4 only use
      * the overload that allows specifying the protocol explicitly.
@@ -514,13 +519,14 @@ public:
      * @param port The port to listen on.
      * @param ec Set to indicate what error occurred, if any.
      */
-    void listen(uint16_t port, lib::error_code & ec) {
-        std::cout << "DDD listen(uint16_t port, lib::error_code & ec)" << std::endl;
-        //listen(lib::bare::ip::tcp::v6(), port, ec);
-    }
+                void listen(uint16_t port, lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(uint16_t port, lib::error_code & ec)" << std::endl;
+                    //listen(lib::bare::ip::tcp::v6(), port, ec);
+                }
 
-    /// Set up endpoint for listening on a port
-    /**
+                /// Set up endpoint for listening on a port
+                /**
      * Bind the internal acceptor using the given port. The IPv6 protocol with
      * mapped IPv4 for dual stack hosts will be used. If you need IPv4 only use
      * the overload that allows specifying the protocol explicitly.
@@ -531,13 +537,14 @@ public:
      * @param port The port to listen on.
      * @param ec Set to indicate what error occurred, if any.
      */
-    void listen(uint16_t port) {
-        std::cout << "DDD listen(uint16_t port)" << std::endl;
-        //listen(lib::bare::ip::tcp::v6(), port);
-    }
+                void listen(uint16_t port)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(uint16_t port)" << std::endl;
+                    //listen(lib::bare::ip::tcp::v6(), port);
+                }
 
-    /// Set up endpoint for listening on a host and service (exception free)
-    /**
+                /// Set up endpoint for listening on a host and service (exception free)
+                /**
      * Bind the internal acceptor using the given host and service. More details
      * about what host and service can be are available in the bare
      * documentation for ip::basic_resolver_query::basic_resolver_query's
@@ -552,11 +559,11 @@ public:
      * descriptive name or a numeric string corresponding to a port number.
      * @param ec Set to indicate what error occurred, if any.
      */
-    void listen(std::string const & host, std::string const & service,
-        lib::error_code & ec)
-    {
-        std::cout << "DDD listen(std::string const & host, std::string const & service,lib::error_code & ec)" << std::endl;
-        /*
+                void listen(std::string const &host, std::string const &service,
+                            lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(std::string const & host, std::string const & service,lib::error_code & ec)" << std::endl;
+                    /*
         using lib::bare::ip::tcp;
         tcp::resolver r(*m_io_service);
         tcp::resolver::query query(host, service);
@@ -570,10 +577,10 @@ public:
         }
         listen(*endpoint_iterator,ec);
         */
-    }
+                }
 
-    /// Set up endpoint for listening on a host and service
-    /**
+                /// Set up endpoint for listening on a host and service
+                /**
      * Bind the internal acceptor using the given host and service. More details
      * about what host and service can be are available in the bare
      * documentation for ip::basic_resolver_query::basic_resolver_query's
@@ -588,27 +595,28 @@ public:
      * descriptive name or a numeric string corresponding to a port number.
      * @param ec Set to indicate what error occurred, if any.
      */
-    void listen(std::string const & host, std::string const & service)
-    {
-        std::cout << "DDD listen(std::string const & host, std::string const & service)" << std::endl;
-        /*
+                void listen(std::string const &host, std::string const &service)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): listen(std::string const & host, std::string const & service)" << std::endl;
+                    /*
         lib::error_code ec;
         listen(host,service,ec);
         if (ec) { throw exception(ec); }
         */
-    }
+                }
 
-    /// Stop listening (exception free)
-    /**
+                /// Stop listening (exception free)
+                /**
      * Stop listening and accepting new connections. This will not end any
      * existing connections.
      *
      * @since 0.3.0-alpha4
      * @param ec A status code indicating an error, if any.
      */
-    void stop_listening(lib::error_code & ec) {
-        std::cout << "DDD stop_listening(lib::error_code & ec)" << std::endl;
-        /*
+                void stop_listening(lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): stop_listening(lib::error_code & ec)" << std::endl;
+                    /*
         if (m_state != LISTENING) {
             m_elog->write(log::elevel::library,
                 "bare::listen called from the wrong state");
@@ -622,86 +630,95 @@ public:
         m_state = READY;
         ec = lib::error_code();
         */
-    }
+                }
 
-    /// Stop listening
-    /**
+                /// Stop listening
+                /**
      * Stop listening and accepting new connections. This will not end any
      * existing connections.
      *
      * @since 0.3.0-alpha4
      */
-    void stop_listening() {
-        std::cout << "DDD stop_listening()" << std::endl;
-        /*
+                void stop_listening()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): stop_listening()" << std::endl;
+                    /*
         lib::error_code ec;
         stop_listening(ec);
         if (ec) { throw exception(ec); }
         */
-    }
+                }
 
-    /// Check if the endpoint is listening
-    /**
+                /// Check if the endpoint is listening
+                /**
      * @return Whether or not the endpoint is listening.
      */
-    bool is_listening() const {
-        std::cout << "DDD is_listening()" << std::endl;
-        //return (m_state == LISTENING);
-        return(false);
-    }
+                bool is_listening() const
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): is_listening()" << std::endl;
+                    //return (m_state == LISTENING);
+                    return (false);
+                }
 
-    /// wraps the run method of the internal io_service object
-    std::size_t run() {
-        std::cout << "DDD run()" << std::endl;
-        //return m_io_service->run();
-        return(0);
-    }
+                /// wraps the run method of the internal io_service object
+                std::size_t run()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): run()" << std::endl;
+                    //return m_io_service->run();
+                    return (0);
+                }
 
-    /// wraps the run_one method of the internal io_service object
-    /**
+                /// wraps the run_one method of the internal io_service object
+                /**
      * @since 0.3.0-alpha4
      */
-    std::size_t run_one() {
-        std::cout << "DDD run_one()" << std::endl;
-        //return m_io_service->run_one();
-        return(0);
-    }
+                std::size_t run_one()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): run_one()" << std::endl;
+                    //return m_io_service->run_one();
+                    return (0);
+                }
 
-    /// wraps the stop method of the internal io_service object
-    void stop() {
-        std::cout << "DDD stop()" << std::endl;
-        //m_io_service->stop();
-    }
+                /// wraps the stop method of the internal io_service object
+                void stop()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): stop()" << std::endl;
+                    //m_io_service->stop();
+                }
 
-    /// wraps the poll method of the internal io_service object
-    std::size_t poll() {
-        std::cout << "DDD poll()" << std::endl;
-        //return m_io_service->poll();
-        return(0);
-    }
+                /// wraps the poll method of the internal io_service object
+                std::size_t poll()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): poll()" << std::endl;
+                    //return m_io_service->poll();
+                    return (0);
+                }
 
-    /// wraps the poll_one method of the internal io_service object
-    std::size_t poll_one() {
-        std::cout << "DDD poll_one()" << std::endl;
-        //return m_io_service->poll_one();
-        return(0);
-    }
+                /// wraps the poll_one method of the internal io_service object
+                std::size_t poll_one()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): poll_one()" << std::endl;
+                    //return m_io_service->poll_one();
+                    return (0);
+                }
 
-    /// wraps the reset method of the internal io_service object
-    void reset() {
-        std::cout << "DDD reset()" << std::endl;
-        //m_io_service->reset();
-    }
+                /// wraps the reset method of the internal io_service object
+                void reset()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): reset()" << std::endl;
+                    //m_io_service->reset();
+                }
 
-    /// wraps the stopped method of the internal io_service object
-    bool stopped() const {
-        std::cout << "DDD stopped()" << std::endl;
-        //return m_io_service->stopped();
-        return(false);
-    }
+                /// wraps the stopped method of the internal io_service object
+                bool stopped() const
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): stopped()" << std::endl;
+                    //return m_io_service->stopped();
+                    return (false);
+                }
 
-    /// Marks the endpoint as perpetual, stopping it from exiting when empty
-    /**
+                /// Marks the endpoint as perpetual, stopping it from exiting when empty
+                /**
      * Marks the endpoint as perpetual. Perpetual endpoints will not
      * automatically exit when they run out of connections to process. To stop
      * a perpetual endpoint call `end_perpetual`.
@@ -712,26 +729,28 @@ public:
      *
      * @since 0.3.0
      */
-    void start_perpetual() {
-        std::cout << "DDD start_perpetual()" << std::endl;
-        //m_work.reset(new lib::bare::io_service::work(*m_io_service));
-    }
+                void start_perpetual()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): start_perpetual()" << std::endl;
+                    //m_work.reset(new lib::bare::io_service::work(*m_io_service));
+                }
 
-    /// Clears the endpoint's perpetual flag, allowing it to exit when empty
-    /**
+                /// Clears the endpoint's perpetual flag, allowing it to exit when empty
+                /**
      * Clears the endpoint's perpetual flag. This will cause the endpoint's run
      * method to exit normally when it runs out of connections. If there are
      * currently active connections it will not end until they are complete.
      *
      * @since 0.3.0
      */
-    void stop_perpetual() {
-        std::cout << "DDD stop_perpetual()" << std::endl;
-        //m_work.reset();
-    }
+                void stop_perpetual()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): stop_perpetual()" << std::endl;
+                    //m_work.reset();
+                }
 
-    /// Call back a function after a period of time.
-    /**
+                /// Call back a function after a period of time.
+                /**
      * Sets a timer that calls back a function after the specified period of
      * milliseconds. Returns a handle that can be used to cancel the timer.
      * A cancelled timer will return the error code error::operation_aborted
@@ -742,9 +761,10 @@ public:
      * @return A handle that can be used to cancel the timer if it is no longer
      * needed.
      */
-    timer_ptr set_timer(long duration, timer_handler callback) {
-        std::cout << "DDD set_timer(long duration, timer_handler callback)" << std::endl;
-        /*
+                timer_ptr set_timer(long duration, timer_handler callback)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): set_timer(long duration, timer_handler callback)" << std::endl;
+                    /*
         timer_ptr new_timer = lib::make_shared<lib::bare::steady_timer>(
             *m_io_service,
              lib::bare::milliseconds(duration)
@@ -762,11 +782,11 @@ public:
 
         return new_timer;
         */
-       return(nullptr);
-    }
+                    return (nullptr);
+                }
 
-    /// Timer handler
-    /**
+                /// Timer handler
+                /**
      * The timer pointer is included to ensure the timer isn't destroyed until
      * after it has expired.
      *
@@ -774,11 +794,11 @@ public:
      * @param callback The function to call back
      * @param ec A status code indicating an error, if any.
      */
-    void handle_timer(timer_ptr, timer_handler callback,
-        lib::bare::error_code const & ec)
-    {
-        std::cout << "DDD handle_timer(timer_ptr, timer_handler callback,lib::bare::error_code const & ec)" << std::endl;
-        /*
+                void handle_timer(timer_ptr, timer_handler callback,
+                                  lib::bare::error_code const &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): handle_timer(timer_ptr, timer_handler callback,lib::bare::error_code const & ec)" << std::endl;
+                    /*
         if (ec) {
             if (ec == lib::bare::error::operation_aborted) {
                 callback(make_error_code(transport::error::operation_aborted));
@@ -792,19 +812,19 @@ public:
             callback(lib::error_code());
         }
         */
-    }
+                }
 
-    /// Accept the next connection attempt and assign it to con (exception free)
-    /**
+                /// Accept the next connection attempt and assign it to con (exception free)
+                /**
      * @param tcon The connection to accept into.
      * @param callback The function to call when the operation is complete.
      * @param ec A status code indicating an error, if any.
      */
-    void async_accept(transport_con_ptr tcon, accept_handler callback,
-        lib::error_code & ec)
-    {
-        std::cout << "DDD async_accept(transport_con_ptr tcon, accept_handler callback,lib::error_code & ec)" << std::endl;
-        /*
+                void async_accept(transport_con_ptr tcon, accept_handler callback,
+                                  lib::error_code &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): async_accept(transport_con_ptr tcon, accept_handler callback,lib::error_code & ec)" << std::endl;
+                    /*
         if (m_state != LISTENING || !m_acceptor) {
             using websocketpp::error::make_error_code;
             ec = make_error_code(websocketpp::error::async_accept_not_listening);
@@ -835,24 +855,26 @@ public:
             );
         }
         */
-    }
+                }
 
-    /// Accept the next connection attempt and assign it to con.
-    /**
+                /// Accept the next connection attempt and assign it to con.
+                /**
      * @param tcon The connection to accept into.
      * @param callback The function to call when the operation is complete.
      */
-    void async_accept(transport_con_ptr tcon, accept_handler callback) {
-        std::cout << "DDD async_accept(transport_con_ptr tcon, accept_handler callback,lib::error_code & ec)" << std::endl;
-        /*
+                void async_accept(transport_con_ptr tcon, accept_handler callback)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): async_accept(transport_con_ptr tcon, accept_handler callback,lib::error_code & ec)" << std::endl;
+                    /*
         lib::error_code ec;
         async_accept(tcon,callback,ec);
         if (ec) { throw exception(ec); }
         */
-    }
-protected:
-    /// Initialize logging
-    /**
+                }
+
+            protected:
+                /// Initialize logging
+                /**
      * The loggers are located in the main endpoint class. As such, the
      * transport doesn't have direct access to them. This method is called
      * by the endpoint constructor to allow shared logging from the transport
@@ -861,19 +883,20 @@ protected:
      * haven't been constructed yet, and cannot be used in the transport
      * destructor as they will have been destroyed by then.
      */
-    void init_logging(const lib::shared_ptr<alog_type>& a, const lib::shared_ptr<elog_type>& e) {
-        std::cout << "DDD init_logging(const lib::shared_ptr<alog_type>& a, const lib::shared_ptr<elog_type>& e)" << std::endl;
-        /*
+                void init_logging(const lib::shared_ptr<alog_type> &a, const lib::shared_ptr<elog_type> &e)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init_logging(const lib::shared_ptr<alog_type>& a, const lib::shared_ptr<elog_type>& e)" << std::endl;
+                    /*
         m_alog = a;
         m_elog = e;
         */
-    }
+                }
 
-    void handle_accept(accept_handler callback, lib::bare::error_code const & 
-        bare_ec)
-    {
-        std::cout << "DDD handle_accept(accept_handler callback, lib::bare::error_code const & bare_ec)" << std::endl;
-        /*
+                void handle_accept(accept_handler callback, lib::bare::error_code const &
+                                                                bare_ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): handle_accept(accept_handler callback, lib::bare::error_code const & bare_ec)" << std::endl;
+                    /*
         lib::error_code ret_ec;
 
         m_alog->write(log::alevel::devel, "bare::handle_accept");
@@ -889,30 +912,38 @@ protected:
 
         callback(ret_ec);
         */
-    }
+                }
 
-    /// Initiate a new connection
-    // TODO: there have to be some more failure conditions here
-    void async_connect(transport_con_ptr tcon, uri_ptr u, connect_handler cb) {
-        std::cout << "DDD async_connect(transport_con_ptr tcon, uri_ptr u, connect_handler cb)" << std::endl;
-        /*
+                /// Initiate a new connection
+                // TODO This is actually not async, so I need to figure out how to configure this for sync_connect
+                void async_connect(transport_con_ptr tcon, uri_ptr u, connect_handler cb)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): async_connect(transport_con_ptr tcon, uri_ptr u, connect_handler cb)" << std::endl;
+                    /*
         using namespace lib::bare::ip;
 
+        // TODO What does the 'resolver' do?
         // Create a resolver
         if (!m_resolver) {
             m_resolver.reset(new lib::bare::ip::tcp::resolver(*m_io_service));
         }
+        */
 
-        tcon->set_uri(u);
+                    tcon->set_uri(u);
 
-        std::string proxy = tcon->get_proxy();
-        std::string host;
-        std::string port;
+                    std::string proxy = tcon->get_proxy();
+                    std::string host;
+                    std::string port;
 
-        if (proxy.empty()) {
-            host = u->get_host();
-            port = u->get_port_str();
-        } else {
+                    if (proxy.empty())
+                    {
+                        host = u->get_host();
+                        port = u->get_port_str();
+                    }
+                    else
+                    {
+                        std::cout << "EEE TODO " << __FILE__ << "(" << __LINE__ << "): async_connect() the uri is a proxy" << std::endl;
+                        /*
             lib::error_code ec;
 
             uri_ptr pu = lib::make_shared<uri>(proxy);
@@ -930,8 +961,14 @@ protected:
 
             host = pu->get_host();
             port = pu->get_port_str();
-        }
+            */
+                    }
 
+                    // I assume the 'connection' is the one that should create the connection, otherwise why call it connection.
+                    // But how do I call Connection to set it up?
+                    std::cout << "DDD Host: " << host << " Port: " << port << std::endl;
+                    tcon->block_connect();
+                    /*
         tcp::resolver::query query(host,port);
 
         if (m_alog->static_test(log::alevel::devel)) {
@@ -980,10 +1017,10 @@ protected:
             );
         }
         */
-    }
+                }
 
-    /// DNS resolution timeout handler
-    /**
+                /// DNS resolution timeout handler
+                /**
      * The timer pointer is included to ensure the timer isn't destroyed until
      * after it has expired.
      *
@@ -991,11 +1028,11 @@ protected:
      * @param callback The function to call back
      * @param ec A status code indicating an error, if any.
      */
-    void handle_resolve_timeout(timer_ptr, connect_handler callback,
-        lib::error_code const & ec)
-    {
-        std::cout << "DDD handle_resolve_timeout(timer_ptr, connect_handler callback,lib::error_code const & ec)" << std::endl;
-        /*
+                void handle_resolve_timeout(timer_ptr, connect_handler callback,
+                                            lib::error_code const &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): handle_resolve_timeout(timer_ptr, connect_handler callback,lib::error_code const & ec)" << std::endl;
+                    /*
         lib::error_code ret_ec;
 
         if (ec) {
@@ -1015,13 +1052,13 @@ protected:
         m_resolver->cancel();
         callback(ret_ec);
         */
-    }
+                }
 
-    void handle_resolve()
-    {
-        std::cout << "DDD TODO Implement handle_resolve()" << std::endl;
-    }
-/*
+                void handle_resolve()
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): TODO Implement handle_resolve()" << std::endl;
+                }
+                /*
     void handle_resolve(transport_con_ptr tcon, timer_ptr dns_timer,
         connect_handler callback, lib::bare::error_code const & ec,
         lib::bare::ip::tcp::resolver::iterator iterator)
@@ -1100,8 +1137,8 @@ protected:
 
 */
 
-    /// bare connect timeout handler
-    /**
+                /// bare connect timeout handler
+                /**
      * The timer pointer is included to ensure the timer isn't destroyed until
      * after it has expired.
      *
@@ -1110,11 +1147,11 @@ protected:
      * @param callback The function to call back
      * @param ec A status code indicating an error, if any.
      */
-    void handle_connect_timeout(transport_con_ptr tcon, timer_ptr,
-        connect_handler callback, lib::error_code const & ec)
-    {
-        std::cout << "DDD handle_connect_timeout(transport_con_ptr tcon, timer_ptr,connect_handler callback, lib::error_code const & ec)" << std::endl;
-        /*
+                void handle_connect_timeout(transport_con_ptr tcon, timer_ptr,
+                                            connect_handler callback, lib::error_code const &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): handle_connect_timeout(transport_con_ptr tcon, timer_ptr,connect_handler callback, lib::error_code const & ec)" << std::endl;
+                    /*
         lib::error_code ret_ec;
 
         if (ec) {
@@ -1134,13 +1171,13 @@ protected:
         tcon->cancel_socket_checked();
         callback(ret_ec);
         */
-    }
+                }
 
-    void handle_connect(transport_con_ptr tcon, timer_ptr con_timer,
-        connect_handler callback, lib::bare::error_code const & ec)
-    {
-        std::cout << "DDD handle_connect(transport_con_ptr tcon, timer_ptr con_timer, connect_handler callback, lib::bare::error_code const & ec)" << std::endl;
-        /*
+                void handle_connect(transport_con_ptr tcon, timer_ptr con_timer,
+                                    connect_handler callback, lib::bare::error_code const &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): handle_connect(transport_con_ptr tcon, timer_ptr con_timer, connect_handler callback, lib::bare::error_code const & ec)" << std::endl;
+                    /*
         if (ec == lib::bare::error::operation_aborted ||
             lib::bare::is_neg(con_timer->expires_from_now()))
         {
@@ -1163,10 +1200,10 @@ protected:
 
         callback(lib::error_code());
         */
-    }
+                }
 
-    /// Initialize a connection
-    /**
+                /// Initialize a connection
+                /**
      * init is called by an endpoint once for each newly created connection.
      * It's purpose is to give the transport policy the chance to perform any
      * transport specific initialization that couldn't be done via the default
@@ -1176,9 +1213,10 @@ protected:
      *
      * @return A status code indicating the success or failure of the operation
      */
-    lib::error_code init(transport_con_ptr tcon) {
-        std::cout << "DDD init(transport_con_ptr tcon)" << std::endl;
-        /*
+                lib::error_code init(transport_con_ptr tcon)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): init(transport_con_ptr tcon)" << std::endl;
+                    /*
         m_alog->write(log::alevel::devel, "transport::bare::init");
 
         // Initialize the connection socket component
@@ -1195,64 +1233,68 @@ protected:
 
         return lib::error_code();
         */
-       errno=0;
-       std::error_code ec (errno,std::generic_category());
-       return(ec);
-    }
-private:
-    /// Convenience method for logging the code and message for an error_code
-    template <typename error_type>
-    void log_err(log::level l, char const * msg, error_type const & ec) {
-        std::stringstream s;
-        s << msg << " error: " << ec << " (" << ec.message() << ")";
-        m_elog->write(l,s.str());
-    }
+                    errno = 0;
+                    std::error_code ec(errno, std::generic_category());
+                    return (ec);
+                }
 
-    /// Helper for cleaning up in the listen method after an error
-    template <typename error_type>
-    lib::error_code clean_up_listen_after_error(error_type const & ec) {
-        std::cout << "DDD clean_up_listen_after_error(error_type const & ec)" << std::endl;
-        /*
+            private:
+                /// Convenience method for logging the code and message for an error_code
+                template <typename error_type>
+                void log_err(log::level l, char const *msg, error_type const &ec)
+                {
+                    std::stringstream s;
+                    s << msg << " error: " << ec << " (" << ec.message() << ")";
+                    m_elog->write(l, s.str());
+                }
+
+                /// Helper for cleaning up in the listen method after an error
+                template <typename error_type>
+                lib::error_code clean_up_listen_after_error(error_type const &ec)
+                {
+                    std::cout << "DDD " << __FILE__ << "(" << __LINE__ << "): clean_up_listen_after_error(error_type const & ec)" << std::endl;
+                    /*
         if (m_acceptor->is_open()) {
             m_acceptor->close();
         }
         log_err(log::elevel::info,"bare listen",ec);
         return socket_con_type::translate_ec(ec);
         */
-       return(ec);
-    }
+                    return (ec);
+                }
 
-    enum state {
-        UNINITIALIZED = 0,
-        READY = 1,
-        LISTENING = 2
-    };
+                enum state
+                {
+                    UNINITIALIZED = 0,
+                    READY = 1,
+                    LISTENING = 2
+                };
 
-    // Handlers
-    tcp_pre_bind_handler    m_tcp_pre_bind_handler;
-    tcp_init_handler    m_tcp_pre_init_handler;
-    tcp_init_handler    m_tcp_post_init_handler;
+                // Handlers
+                tcp_pre_bind_handler m_tcp_pre_bind_handler;
+                tcp_init_handler m_tcp_pre_init_handler;
+                tcp_init_handler m_tcp_post_init_handler;
 
-    // Network Resources
-    io_service_ptr      m_io_service;
-    bool                m_external_io_service;
-    acceptor_ptr        m_acceptor;
-    resolver_ptr        m_resolver;
-    work_ptr            m_work;
+                // Network Resources
+                io_service_ptr m_io_service;
+                bool m_external_io_service;
+                acceptor_ptr m_acceptor;
+                resolver_ptr m_resolver;
+                work_ptr m_work;
 
-    // Network constants
-    int                 m_listen_backlog;
-    bool                m_reuse_addr;
+                // Network constants
+                int m_listen_backlog;
+                bool m_reuse_addr;
 
-    lib::shared_ptr<elog_type> m_elog;
-    lib::shared_ptr<alog_type> m_alog;
+                lib::shared_ptr<elog_type> m_elog;
+                lib::shared_ptr<alog_type> m_alog;
 
-    // Transport state
-    state               m_state;
-};
+                // Transport state
+                state m_state;
+            };
 
-} // namespace bare
-} // namespace transport
+        } // namespace bare
+    }     // namespace transport
 } // namespace websocketpp
 
 #endif // WEBSOCKETPP_TRANSPORT_BARE_HPP
